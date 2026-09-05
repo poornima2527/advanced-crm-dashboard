@@ -1,0 +1,25 @@
+'use client';
+
+import {Activity, ArrowUpRight, BarChart3, CalendarDays, CircleDollarSign, Users} from 'lucide-react';
+import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
+import {useQuery} from '@tanstack/react-query';
+import type {Customer} from '@/types/customer';
+
+const growth=[42,48,45,58,64,61,72,78,76,88,94,108];
+const months=['Oct','Nov','Dec','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep'];
+
+export function AnalyticsOverview(){
+  const {data}=useQuery<{customers:Customer[]}>({queryKey:['analytics-customers'],queryFn:async()=>{const response=await fetch('/api/customers?limit=50&sort=createdAt&dir=desc');if(!response.ok)throw new Error('Unable to load analytics');return response.json()}});
+  const customers=data?.customers||[];
+  const statusCounts=['Active','Lead','Inactive'].map(status=>({status,count:customers.filter(customer=>customer.status===status).length}));
+  const total=Math.max(customers.length,1);
+  const activities=customers.slice(0,4);
+  return <section className="grid gap-4 xl:grid-cols-[1.45fr_1fr]">
+    <Card className="border-white/[.07] bg-card/80"><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><div><CardTitle className="text-base">Customer growth</CardTitle><p className="mt-1 text-xs text-muted-foreground">New customers over the last 12 months</p></div><span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400"><ArrowUpRight className="h-3.5 w-3.5"/>12.4%</span></CardHeader><CardContent><div className="flex h-44 items-end gap-2 pt-6">{growth.map((value,index)=><div key={months[index]} className="group flex min-w-0 flex-1 flex-col items-center gap-2"><div className="relative flex h-36 w-full items-end"><div className="w-full rounded-t bg-primary/70 transition-colors group-hover:bg-primary" style={{height:`${value/1.15}%`}}/><span className="absolute -top-5 left-1/2 hidden -translate-x-1/2 text-[10px] text-muted-foreground group-hover:block">{value}</span></div><span className="text-[10px] text-muted-foreground">{months[index]}</span></div>)}</div></CardContent></Card>
+    <Card className="border-white/[.07] bg-card/80"><CardHeader><CardTitle className="text-base">Customer status</CardTitle><p className="mt-1 text-xs text-muted-foreground">Current relationship mix</p></CardHeader><CardContent><div className="flex items-center gap-6"><div className="relative grid h-32 w-32 shrink-0 place-items-center rounded-full" style={{background:'conic-gradient(#34d399 0 62%, #fbbf24 62% 84%, #64748b 84% 100%)'}}><div className="grid h-24 w-24 place-items-center rounded-full bg-card"><span className="text-2xl font-semibold">{customers.length||0}</span><span className="text-[10px] text-muted-foreground">customers</span></div></div><div className="min-w-0 flex-1 space-y-3">{statusCounts.map(({status,count},index)=><div key={status} className="flex items-center justify-between text-sm"><span className="flex items-center gap-2"><i className={`h-2 w-2 rounded-full ${index===0?'bg-emerald-400':index===1?'bg-amber-400':'bg-slate-400'}`}/>{status}</span><span className="font-medium">{Math.round(count/total*100)}%</span></div>)}</div></div></CardContent></Card>
+    <Card className="border-white/[.07] bg-card/80"><CardHeader><CardTitle className="text-base">Deals overview</CardTitle><p className="mt-1 text-xs text-muted-foreground">Pipeline performance this quarter</p></CardHeader><CardContent><div className="grid grid-cols-2 gap-3"><Metric icon={CircleDollarSign} label="Pipeline value" value="$248,500"/><Metric icon={BarChart3} label="Win rate" value="68.4%"/><Metric icon={CalendarDays} label="Avg. sales cycle" value="24 days"/><Metric icon={Users} label="Open opportunities" value="18"/></div></CardContent></Card>
+    <Card className="border-white/[.07] bg-card/80"><CardHeader><CardTitle className="text-base">Recent activity</CardTitle><p className="mt-1 text-xs text-muted-foreground">Latest customer touchpoints</p></CardHeader><CardContent><div className="space-y-4">{activities.length?activities.map(customer=><div key={customer._id} className="flex items-center gap-3"><div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">{customer.name.split(' ').map(part=>part[0]).join('').slice(0,2)}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{customer.name}</p><p className="truncate text-xs text-muted-foreground">Contacted from {customer.company}</p></div><time className="text-[11px] text-muted-foreground">{customer.lastContactDate}</time></div>):<p className="py-5 text-sm text-muted-foreground">No recent activity yet.</p>}</div></CardContent></Card>
+  </section>;
+}
+
+function Metric({icon:Icon,label,value}:{icon:typeof CircleDollarSign;label:string;value:string}){return <div className="rounded-lg border border-border/70 bg-background/40 p-3"><Icon className="h-4 w-4 text-primary"/><p className="mt-4 text-xs text-muted-foreground">{label}</p><p className="mt-1 text-sm font-semibold">{value}</p></div>}

@@ -1,0 +1,9 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {getDb} from '@/lib/mongodb';
+import {ObjectId} from 'mongodb';
+import {seedTasks} from '@/lib/seed';
+
+export async function GET(req:NextRequest){const db=await getDb();const col=db.collection('tasks');if(process.env.CRM_DEMO_MODE==='true'&&await col.countDocuments()===0)await col.insertMany(seedTasks());const sp=req.nextUrl.searchParams;const q=(sp.get('q')||'').trim();const status=sp.get('status');const filter:Record<string,unknown>={};if(q)filter.$or=[{title:{$regex:q,$options:'i'}},{customer:{$regex:q,$options:'i'}}];if(status)filter.status=status;const tasks=await col.find(filter).sort({dueDate:1}).toArray();return NextResponse.json(tasks.map(task=>({...task,_id:task._id.toString()})));}
+export async function POST(req:NextRequest){try{const body=await req.json();const task={...body,createdAt:new Date().toISOString()};const result=await (await getDb()).collection('tasks').insertOne(task);return NextResponse.json({...task,_id:result.insertedId.toString()},{status:201});}catch{return NextResponse.json({error:'Invalid task payload'},{status:400});}}
+export async function PATCH(req:NextRequest){try{const body=await req.json();const {_id,...changes}=body;const col=(await getDb()).collection('tasks');await col.updateOne({_id:new ObjectId(_id)},{$set:changes});const task=await col.findOne({_id:new ObjectId(_id)});return NextResponse.json({...task,_id:task?._id.toString()});}catch{return NextResponse.json({error:'Unable to update task'},{status:400});}}
+export async function DELETE(req:NextRequest){try{const id=req.nextUrl.searchParams.get('id');if(!id)return NextResponse.json({error:'id required'},{status:400});await (await getDb()).collection('tasks').deleteOne({_id:new ObjectId(id)});return NextResponse.json({ok:true});}catch{return NextResponse.json({error:'Unable to delete task'},{status:400});}}

@@ -1,0 +1,9 @@
+import {NextRequest,NextResponse} from 'next/server';
+import {getDb} from '@/lib/mongodb';
+import {ObjectId} from 'mongodb';
+import {seedDeals} from '@/lib/seed';
+
+export async function GET(req:NextRequest){const db=await getDb();const col=db.collection('deals');if(process.env.CRM_DEMO_MODE==='true'&&await col.countDocuments()===0)await col.insertMany(seedDeals());const sp=req.nextUrl.searchParams;const q=(sp.get('q')||'').trim();const stage=sp.get('stage');const filter:Record<string,unknown>={};if(q)filter.$or=[{name:{$regex:q,$options:'i'}},{customer:{$regex:q,$options:'i'}}];if(stage)filter.stage=stage;const deals=await col.find(filter).sort({createdAt:-1}).toArray();return NextResponse.json(deals.map(deal=>({...deal,_id:deal._id.toString()})));}
+export async function POST(req:NextRequest){try{const body=await req.json();const deal={...body,createdAt:new Date().toISOString()};const result=await (await getDb()).collection('deals').insertOne(deal);return NextResponse.json({...deal,_id:result.insertedId.toString()},{status:201});}catch{return NextResponse.json({error:'Invalid deal payload'},{status:400});}}
+export async function PATCH(req:NextRequest){try{const body=await req.json();const {_id,...changes}=body;const col=(await getDb()).collection('deals');await col.updateOne({_id:new ObjectId(_id)},{$set:changes});const deal=await col.findOne({_id:new ObjectId(_id)});return NextResponse.json({...deal,_id:deal?._id.toString()});}catch{return NextResponse.json({error:'Unable to update deal'},{status:400});}}
+export async function DELETE(req:NextRequest){try{const id=req.nextUrl.searchParams.get('id');if(!id)return NextResponse.json({error:'id required'},{status:400});await (await getDb()).collection('deals').deleteOne({_id:new ObjectId(id)});return NextResponse.json({ok:true});}catch{return NextResponse.json({error:'Unable to delete deal'},{status:400});}}

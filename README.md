@@ -3,6 +3,7 @@
 A production-style customer management dashboard built from the supplied CRM task specification.
 
 ## Stack
+
 - Next.js App Router + TypeScript
 - Tailwind CSS
 - shadcn/ui-style components powered by Radix UI
@@ -13,6 +14,7 @@ A production-style customer management dashboard built from the supplied CRM tas
 - Sonner toast notifications
 
 ## Features implemented
+
 - Responsive CRM dashboard and sidebar
 - Customer table with name, email, phone, company, status and last-contact date
 - Debounced real-time search by name, email and company
@@ -27,5 +29,15 @@ A production-style customer management dashboard built from the supplied CRM tas
 - CSV export of the current filtered page
 - Dark/light theme toggle
 - Cmd/Ctrl + K opens filters
-- Seed data for 150 customers when MongoDB is empty
+- Opt-in fictional seed data for 150 customers when `CRM_DEMO_MODE=true`
 
+## Run locally
+
+1. Install Node.js 20+ and MongoDB.
+2. Copy `.env.example` to `.env.local`.
+3. Start MongoDB.
+4. Run:
+
+```bash
+npm install
+npm run dev
