@@ -31,13 +31,3 @@ A production-style customer management dashboard built from the supplied CRM tas
 - Cmd/Ctrl + K opens filters
 - Opt-in fictional seed data for 150 customers when `CRM_DEMO_MODE=true`
 
-## Run locally
-
-1. Install Node.js 20+ and MongoDB.
-2. Copy `.env.example` to `.env.local`.
-3. Start MongoDB.
-4. Run:
-
-```bash
-npm install
-npm run dev
